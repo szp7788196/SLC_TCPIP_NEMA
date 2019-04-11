@@ -1,0 +1,15 @@
+..\output\obj\queue.o: ..\FREERTOS\src\queue.c
+..\output\obj\queue.o: C:\Keil\ARM\ARMCC\bin\..\include\stdlib.h
+..\output\obj\queue.o: C:\Keil\ARM\ARMCC\bin\..\include\string.h
+..\output\obj\queue.o: ..\FREERTOS\inc\FreeRTOS.h
+..\output\obj\queue.o: C:\Keil\ARM\ARMCC\bin\..\include\stddef.h
+..\output\obj\queue.o: C:\Keil\ARM\ARMCC\bin\..\include\stdint.h
+..\output\obj\queue.o: ..\FREERTOS\inc\FreeRTOSConfig.h
+..\output\obj\queue.o: ..\FREERTOS\inc\projdefs.h
+..\output\obj\queue.o: ..\FREERTOS\inc\portable.h
+..\output\obj\queue.o: ..\FREERTOS\inc\deprecated_definitions.h
+..\output\obj\queue.o: ..\FREERTOS\inc\portmacro.h
+..\output\obj\queue.o: ..\FREERTOS\inc\mpu_wrappers.h
+..\output\obj\queue.o: ..\FREERTOS\inc\task.h
+..\output\obj\queue.o: ..\FREERTOS\inc\list.h
+..\output\obj\queue.o: ..\FREERTOS\inc\queue.h
