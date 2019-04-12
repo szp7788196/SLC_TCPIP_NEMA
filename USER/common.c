@@ -6,12 +6,15 @@
 u8 HoldReg[HOLD_REG_LEN];						//保持寄存器
 u8 RegularTimeGroups[TIME_BUF_LEN];				//时间策略缓存
 u8 TimeGroupNumber = 0;							//时间策略组数
-RegularTime_S RegularTimeStruct[MAX_GROUP_NUM];	//时间策略结构体数组
+pRegularTime RegularTimeWeekDay = NULL;			//工作日策略
+pRegularTime RegularTimeWeekEnd = NULL;			//周末策略
+pRegularTime RegularTimeHoliday = NULL;			//节假日策略
 
 /****************************互斥量相关******************************/
 SemaphoreHandle_t  xMutex_IIC1 			= NULL;	//IIC总线1的互斥量
 SemaphoreHandle_t  xMutex_INVENTR 		= NULL;	//英飞特电源的互斥量
 SemaphoreHandle_t  xMutex_AT_COMMAND 	= NULL;	//AT指令的互斥量
+SemaphoreHandle_t  xMutex_STRATEGY 		= NULL;	//AT指令的互斥量
 
 /***************************消息队列相关*****************************/
 QueueHandle_t xQueue_sensor 		= NULL;	//用于存储传感器的数据
@@ -969,7 +972,7 @@ u8 ReadServerIP(void)
 		memset(ServerIP,0,16);
 
 //		sprintf((char *)ServerIP, "180.101.147.115");
-		sprintf((char *)ServerIP, "103.48.232.123");
+		sprintf((char *)ServerIP, "103.48.232.121");
 	}
 
 	return ret;
@@ -996,7 +999,7 @@ u8 ReadServerPort(void)
 		memset(ServerPort,0,6);
 
 //		sprintf((char *)ServerPort, "5683");
-		sprintf((char *)ServerPort, "56556");
+		sprintf((char *)ServerPort, "8080");
 	}
 
 	return ret;
@@ -1184,6 +1187,22 @@ u8 ReadRegularTimeGroups(void)
 	u16 cal_crc = 0;
 	u8 time_group[1024];
 	u8 read_success_buf_flag[MAX_GROUP_NUM];
+	
+	RegularTimeWeekDay = (pRegularTime)mymalloc(sizeof(RegularTime_S));
+	RegularTimeWeekEnd = (pRegularTime)mymalloc(sizeof(RegularTime_S));
+	RegularTimeHoliday = (pRegularTime)mymalloc(sizeof(RegularTime_S));
+	
+	RegularTimeWeekDay->number = 0xFF;
+	RegularTimeWeekEnd->number = 0xFF;
+	RegularTimeHoliday->number = 0xFF;
+	
+	RegularTimeWeekDay->prev = NULL;
+	RegularTimeWeekEnd->prev = NULL;
+	RegularTimeHoliday->prev = NULL;
+	
+	RegularTimeWeekDay->next = NULL;
+	RegularTimeWeekEnd->next = NULL;
+	RegularTimeHoliday->next = NULL;
 
 	memset(time_group,0,1024);
 	memset(read_success_buf_flag,0,MAX_GROUP_NUM);
@@ -1208,15 +1227,40 @@ u8 ReadRegularTimeGroups(void)
 	{
 		if(read_success_buf_flag[i] == 1)
 		{
-			RegularTimeStruct[i].type 		= time_group[i * TIME_RULE_LEN + 0];
+			pRegularTime tmp_time = NULL;
 
-			RegularTimeStruct[i].year 		= time_group[i * TIME_RULE_LEN + 1];
-			RegularTimeStruct[i].month 		= time_group[i * TIME_RULE_LEN + 2];
-			RegularTimeStruct[i].date 		= time_group[i * TIME_RULE_LEN + 3];
-			RegularTimeStruct[i].hour 		= time_group[i * TIME_RULE_LEN + 4];
-			RegularTimeStruct[i].minute 	= time_group[i * TIME_RULE_LEN + 5];
+			tmp_time = (pRegularTime)mymalloc(sizeof(RegularTime_S));
+			
+			tmp_time->prev = NULL;
+			tmp_time->next = NULL;
 
-			RegularTimeStruct[i].percent 	= time_group[i * TIME_RULE_LEN + 6];
+			tmp_time->number	= i;
+			tmp_time->type 		= time_group[i * TIME_RULE_LEN + 0];
+			tmp_time->year 		= time_group[i * TIME_RULE_LEN + 1];
+			tmp_time->month 	= time_group[i * TIME_RULE_LEN + 2];
+			tmp_time->date 		= time_group[i * TIME_RULE_LEN + 3];
+			tmp_time->hour 		= time_group[i * TIME_RULE_LEN + 4];
+			tmp_time->minute 	= time_group[i * TIME_RULE_LEN + 5];
+			tmp_time->percent 	= time_group[i * TIME_RULE_LEN + 6];
+
+			switch(tmp_time->type)
+			{
+				case TYPE_WEEKDAY:
+					RegularTimeGroupAdd(TYPE_WEEKDAY,tmp_time);
+				break;
+
+				case TYPE_WEEKEND:
+					RegularTimeGroupAdd(TYPE_WEEKEND,tmp_time);
+				break;
+
+				case TYPE_HOLIDAY:
+					RegularTimeGroupAdd(TYPE_HOLIDAY,tmp_time);
+				break;
+
+				default:
+
+				break;
+			}
 		}
 	}
 
@@ -1387,8 +1431,179 @@ u16 UnPackSensorData(SensorMsg_S *msg,u8 *buf)
 	return len;
 }
 
+u8 RegularTimeGroupAdd(u8 type,pRegularTime group_time)
+{
+	u8 ret = 1;
+	pRegularTime tmp_time = NULL;
+	pRegularTime main_time = NULL;
 
+	if(xSchedulerRunning == 1)
+	{
+		xSemaphoreTake(xMutex_STRATEGY, portMAX_DELAY);
+	}
+	
+	switch(type)
+	{
+		case TYPE_WEEKDAY:
+			main_time = RegularTimeWeekDay;
+		break;
 
+		case TYPE_WEEKEND:
+			main_time = RegularTimeWeekEnd;
+		break;
+
+		case TYPE_HOLIDAY:
+			main_time = RegularTimeHoliday;
+		break;
+
+		default:
+
+		break;
+	}
+	
+	if(main_time != NULL)
+	{
+		for(tmp_time = main_time; tmp_time != NULL; tmp_time = tmp_time->next)
+		{
+			if(group_time->number == tmp_time->number && tmp_time->number != 0xFF)
+			{
+				if(tmp_time->next != NULL)
+				{
+					tmp_time->prev->next = group_time;
+					tmp_time->prev->next->next = tmp_time->next;
+					tmp_time->next->prev = group_time;
+					tmp_time->next->prev->prev = tmp_time->prev;
+					
+					myfree(tmp_time);
+				}
+				else
+				{
+					tmp_time->prev->next = group_time;
+					tmp_time->prev->next->prev = tmp_time->prev;
+					
+					myfree(tmp_time);
+				}
+				
+				break;
+			}
+			else if(tmp_time->next == NULL)
+			{
+				tmp_time->next = group_time;
+				tmp_time->next->prev = tmp_time;
+				
+				break;
+			}
+		}
+	}
+	
+	if(xSchedulerRunning == 1)
+	{
+		xSemaphoreGive(xMutex_STRATEGY);
+	}
+	
+	return ret;
+}
+
+u8 RegularTimeGroupSub(u8 number)
+{
+	u8 ret = 0;
+	pRegularTime tmp_time = NULL;
+
+	if(xSchedulerRunning == 1)
+	{
+		xSemaphoreTake(xMutex_STRATEGY, portMAX_DELAY);
+	}
+	
+	if(RegularTimeWeekDay != NULL || RegularTimeWeekDay->next != NULL)
+	{
+		for(tmp_time = RegularTimeWeekDay->next; tmp_time != NULL; tmp_time = tmp_time->next)
+		{
+			if(tmp_time->number == number)
+			{
+				if(tmp_time->next != NULL)
+				{
+					tmp_time->prev->next = tmp_time->next;
+					tmp_time->next->prev = tmp_time->prev;
+				}
+				else
+				{
+					tmp_time->prev->next = NULL;
+				}
+				
+				myfree(tmp_time);
+				
+				ret = 1;
+			}
+		}
+	}
+
+	if(RegularTimeWeekEnd != NULL || RegularTimeWeekEnd->next != NULL)
+	{
+		for(tmp_time = RegularTimeWeekEnd->next; tmp_time != NULL; tmp_time = tmp_time->next)
+		{
+			if(tmp_time->number == number)
+			{
+				if(tmp_time->next != NULL)
+				{
+					tmp_time->prev->next = tmp_time->next;
+					tmp_time->next->prev = tmp_time->prev;
+				}
+				else
+				{
+					tmp_time->prev->next = NULL;
+				}
+				
+				myfree(tmp_time);
+				
+				ret = 1;
+			}
+		}
+	}
+
+	if(RegularTimeHoliday != NULL || RegularTimeHoliday->next != NULL)
+	{
+		for(tmp_time = RegularTimeHoliday->next; tmp_time != NULL; tmp_time = tmp_time->next)
+		{
+			if(tmp_time->number == number)
+			{
+				if(tmp_time->next != NULL)
+				{
+					tmp_time->prev->next = tmp_time->next;
+					tmp_time->next->prev = tmp_time->prev;
+				}
+				else
+				{
+					tmp_time->prev->next = NULL;
+				}
+				
+				myfree(tmp_time);
+
+				ret = 1;
+			}
+		}
+	}
+	
+	if(xSchedulerRunning == 1)
+	{
+		xSemaphoreGive(xMutex_STRATEGY);
+	}
+	
+	return ret;
+}
+
+void RemoveAllStrategy(void)
+{
+	u16 i = 0;
+	
+	for(i = 0; i < MAX_GROUP_NUM; i ++)
+	{
+		RegularTimeGroupSub(i);
+		
+		AT24CXX_WriteLenByte(TIME_RULE_ADD + TIME_RULE_LEN * i + 7,0x0000,2);
+	}
+}
+
+	
 
 
 

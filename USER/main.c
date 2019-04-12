@@ -14,8 +14,8 @@ RCC_ClocksTypeDef RCC_Clocks;
 
 int main(void)
 {
-	SCB->VTOR = FLASH_BASE | 0x08000; /* Vector Table Relocation in Internal FLASH. */
-	IWDG_Init(IWDG_Prescaler_128,625);	//128分频 312.5HZ 625为2秒
+//	SCB->VTOR = FLASH_BASE | 0x08000; /* Vector Table Relocation in Internal FLASH. */
+//	IWDG_Init(IWDG_Prescaler_128,625);	//128分频 312.5HZ 625为2秒
 
 	RCC_GetClocksFreq(&RCC_Clocks);		//查看各个总线的时钟频率
 	__set_PRIMASK(1);	//关闭全局中断
@@ -42,16 +42,16 @@ int main(void)
 //	}
 //	AT24CXX_WriteOneByte(UU_ID_ADD,255);
 
-//	mem_init();
+	mem_init();
 
-//	IWDG_Feed();				//喂看门狗
+	IWDG_Feed();				//喂看门狗
 
-//	ReadParametersFromEEPROM();	//读取所有的运行参数
+	ReadParametersFromEEPROM();	//读取所有的运行参数
 
-//	AppObjCreate();				//创建消息队列、互斥量
-//	AppTaskCreate();			//创建任务
+	AppObjCreate();				//创建消息队列、互斥量
+	AppTaskCreate();			//创建任务
 
-//	vTaskStartScheduler();		//启动调度，开始执行任务
+	vTaskStartScheduler();		//启动调度，开始执行任务
 
 	while(1)
 	{
