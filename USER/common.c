@@ -60,7 +60,7 @@ u8 PowerINTFC = 0;					//电源控制接口编号 0:0~10V  1:PWM  2:UART
 u8 TimeZone = 8;					//时区偏移量
 
 /***************************其他*****************************/
-u8 LightLevelPercent = 0;			//灯的亮度级别
+u8 LightLevelPercent = 200;			//灯的亮度级别
 u8 NeedToReset = 0;					//复位/重启标志
 u8 GetGPSOK = 0;					//成功获取位置信息和时间标志
 u8 GetTimeOK = 0;					//成功获取时间标志
@@ -1286,7 +1286,7 @@ void ReadParametersFromEEPROM(void)
 	ReadUpLoadINVL();
 	ReadPowerINTFCC();
 	ReadTimeZone();
-	ReadLightLevelPercent();
+//	ReadLightLevelPercent();
 	ReadRegularTimeGroups();
 	ReadOTAInfo(HoldReg);
 }

@@ -1,7 +1,7 @@
 #ifndef FIFO_H
 #define FIFO_H
 
-#define pipe_num 10
+#define pipe_num 1
 
 #include <stdint.h>
 #include "memb.h"

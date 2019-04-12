@@ -18,7 +18,7 @@ uint8_t rx_fifo[512];
 uint8_t rx_fifo1[512];
 int8_t dl_buf_id = -1;
 
-FIFO(dl_buf,8,512);
+FIFO(dl_buf,1,512);
 
 //#define UART_DMA 1
 #define MAX_RCV_LEN 512
