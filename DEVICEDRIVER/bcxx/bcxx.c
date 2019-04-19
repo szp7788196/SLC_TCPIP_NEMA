@@ -654,30 +654,30 @@ unsigned char bcxx_get_AT_CSQ(void)
 	u8 i = 0;
 	char *msg = NULL;
 	char tmp[10];
-	
-	if(SendCmd("AT+CSQ\r\n", "+CSQ:", 100,0,TIMEOUT_1S) == 1)
+
+	if(SendCmd("AT+CSQ\r\n", "OK", 100,0,TIMEOUT_1S) == 1)
 	{
-		msg = strstr((char *)result_ptr->data,":");
+		msg = strstr((char *)result_ptr->data,"+CSQ:");
 
 		if(msg == NULL)
 			return 0;
-		
+
 		memset(tmp,0,10);
-		
-		msg = msg + 1;
-		
+
+		msg = msg + 5;
+
 		while(*msg != ',')
 		tmp[i ++] = *(msg ++);
 		tmp[i] = '\0';
-		
+
 		ret = nbiot_atoi(tmp,strlen(tmp));
-		
-		if(ret == 0 && ret == 99)
+
+		if(ret == 0 || ret >= 99)
 		{
 			ret = 0;
 		}
 	}
-	
+
 	return ret;
 }
 

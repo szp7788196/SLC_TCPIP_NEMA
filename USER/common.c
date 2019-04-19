@@ -972,7 +972,7 @@ u8 ReadServerIP(void)
 		memset(ServerIP,0,16);
 
 //		sprintf((char *)ServerIP, "180.101.147.115");
-		sprintf((char *)ServerIP, "103.48.232.121");
+		sprintf((char *)ServerIP, "103.48.232.123");
 	}
 
 	return ret;
@@ -999,7 +999,7 @@ u8 ReadServerPort(void)
 		memset(ServerPort,0,6);
 
 //		sprintf((char *)ServerPort, "5683");
-		sprintf((char *)ServerPort, "8080");
+		sprintf((char *)ServerPort, "56556");
 	}
 
 	return ret;
@@ -1084,7 +1084,7 @@ u8 ReadLightLevelPercent(void)
 		}
 		else
 		{
-			LightLevelPercent = 0;
+			LightLevelPercent = 200;
 		}
 	}
 
