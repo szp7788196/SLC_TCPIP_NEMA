@@ -65,7 +65,7 @@ void AutoLoopRegularTimeGroups(u8 *percent)
 	{
 		xSemaphoreTake(xMutex_STRATEGY, portMAX_DELAY);
 		
-		if(calendar.week >= 1 && calendar.week <= 5)	//判断是否是工作日
+		if(calendar.week <= 6)	//判断是否是工作日
 		{
 			if(RegularTimeWeekDay->next != NULL)		//判断策略列表是否不为空
 			{
@@ -113,67 +113,13 @@ void AutoLoopRegularTimeGroups(u8 *percent)
 					}
 					else
 					{
-						ret = 1;
-					}
-
-					if(ret == 1)
-					{
-						*percent = tmp_time->percent * 2;
-
-						break;
-					}
-				}
-			}
-		}
-		else if(calendar.week >= 6 && calendar.week <= 7)
-		{
-			if(RegularTimeWeekEnd->next != NULL)
-			{
-				for(tmp_time = RegularTimeWeekEnd->next; tmp_time != NULL; tmp_time = tmp_time->next)
-				{
-					if(tmp_time->hour 	== calendar.hour &&
-					   tmp_time->minute == calendar.min)
-					{
-						ret = 1;
-					}
-					else if(tmp_time->next != NULL)
-					{
-						if(tmp_time->next->hour   == calendar.hour &&
-					       tmp_time->next->minute == calendar.min)
+						gate1 = tmp_time->hour * 60 + tmp_time->minute;					//该条策略的分钟数
+						gate_n = calendar.hour * 60 + calendar.min;						//当前时间的分钟数
+						
+						if(gate_n >= gate1)
 						{
-							tmp_time = tmp_time->next;
-							
 							ret = 1;
 						}
-						else
-						{
-							gate1 = tmp_time->hour * 60 + tmp_time->minute;
-							gate2 = tmp_time->next->hour * 60 + tmp_time->next->minute;
-							gate_n = calendar.hour * 60 + calendar.min;
-
-							if(gate1 < gate2)
-							{
-								if(gate1 <= gate_n && gate_n <= gate2)
-								{
-									ret = 1;
-								}
-							}
-							else if(gate1 > gate2)
-							{
-								if(gate1 <= gate_n && gate_n <= gate24)
-								{
-									ret = 1;
-								}
-								else if(gate0 <= gate_n && gate_n <= gate2)
-								{
-									ret = 1;
-								}
-							}
-						}
-					}
-					else
-					{
-						ret = 1;
 					}
 
 					if(ret == 1)
@@ -190,52 +136,71 @@ void AutoLoopRegularTimeGroups(u8 *percent)
 		{
 			for(tmp_time = RegularTimeHoliday->next; tmp_time != NULL; tmp_time = tmp_time->next)
 			{
-				if(tmp_time->year + 2000 	== calendar.w_year &&
-				   tmp_time->month 			== calendar.w_month &&
-				   tmp_time->date 			== calendar.w_date &&
-				   tmp_time->hour 			== calendar.hour &&
-				   tmp_time->minute 		== calendar.min)
+				if(HolodayRange.year_s <= HolodayRange.year_e)				//起始年早于等于结束年
 				{
-					ret = 1;
-				}
-				else if(tmp_time->next != NULL)
-				{
-					if(tmp_time->next->hour   == calendar.hour &&
-					   tmp_time->next->minute == calendar.min)
+					if(HolodayRange.year_s <= calendar.w_year - 2000 && 
+					   calendar.w_year - 2000 <= HolodayRange.year_e)		//当前年处于起始和结束年之间
 					{
-						tmp_time = tmp_time->next;
-						
-						ret = 1;
-					}
-					else
-					{
-						gate1 = tmp_time->hour * 60 + tmp_time->minute;
-						gate2 = tmp_time->next->hour * 60 + tmp_time->next->minute;
-						gate_n = calendar.hour * 60 + calendar.min;
+						if(HolodayRange.month_s <= HolodayRange.month_e)
+						{
+							if(HolodayRange.month_s <= calendar.w_month && 
+							   calendar.w_month <= HolodayRange.month_e)
+							{
+								if(HolodayRange.date_s <= HolodayRange.date_e)
+								{
+									if(HolodayRange.date_s <= calendar.w_date && 
+									   calendar.w_date <= HolodayRange.date_e)
+									{
+										if(tmp_time->next != NULL)
+										{
+											if(tmp_time->next->hour   == calendar.hour &&
+											   tmp_time->next->minute == calendar.min)
+											{
+												tmp_time = tmp_time->next;
+												
+												ret = 1;
+											}
+											else
+											{
+												gate1 = tmp_time->hour * 60 + tmp_time->minute;
+												gate2 = tmp_time->next->hour * 60 + tmp_time->next->minute;
+												gate_n = calendar.hour * 60 + calendar.min;
 
-						if(gate1 < gate2)
-						{
-							if(gate1 <= gate_n && gate_n <= gate2)
-							{
-								ret = 1;
-							}
-						}
-						else if(gate1 > gate2)
-						{
-							if(gate1 <= gate_n && gate_n <= gate24)
-							{
-								ret = 1;
-							}
-							else if(gate0 <= gate_n && gate_n <= gate2)
-							{
-								ret = 1;
+												if(gate1 < gate2)
+												{
+													if(gate1 <= gate_n && gate_n <= gate2)
+													{
+														ret = 1;
+													}
+												}
+												else if(gate1 > gate2)
+												{
+													if(gate1 <= gate_n && gate_n <= gate24)
+													{
+														ret = 1;
+													}
+													else if(gate0 <= gate_n && gate_n <= gate2)
+													{
+														ret = 1;
+													}
+												}
+											}
+										}
+										else
+										{
+											gate1 = tmp_time->hour * 60 + tmp_time->minute;					//该条策略的分钟数
+											gate_n = calendar.hour * 60 + calendar.min;						//当前时间的分钟数
+											
+											if(gate_n >= gate1)
+											{
+												ret = 1;
+											}
+										}
+									}
+								}
 							}
 						}
 					}
-				}
-				else
-				{
-					ret = 1;
 				}
 
 				if(ret == 1)

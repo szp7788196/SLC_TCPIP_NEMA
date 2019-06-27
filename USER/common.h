@@ -73,7 +73,8 @@
 
 #define TYPE_WEEKDAY				0x01
 #define TYPE_WEEKEND				0x02
-#define TYPE_HOLIDAY				0x04
+#define TYPE_HOLIDAY_START			0x04
+#define TYPE_HOLIDAY_END			0x14
 
 #define MODE_AUTO					0
 #define MODE_MANUAL					1
@@ -164,6 +165,19 @@ struct RegularTime
 
 	pRegularTime prev;
 	pRegularTime next;
+};
+
+#define HolodayRange_S struct HolodayRange
+typedef struct HolodayRange *pHolodayRange;
+struct HolodayRange
+{
+	u8 year_s;
+	u8 month_s;
+	u8 date_s;
+	
+	u8 year_e;
+	u8 month_e;
+	u8 date_e;
 };
 
 
@@ -308,6 +322,7 @@ extern u8 TimeGroupNumber;
 extern pRegularTime RegularTimeWeekDay;			//工作日策略
 extern pRegularTime RegularTimeWeekEnd;			//周末策略
 extern pRegularTime RegularTimeHoliday;			//节假日策略
+extern HolodayRange_S HolodayRange;				//节假日起始日期
 
 /***************************固件升级相关*****************************/
 extern u8 NeedUpDateFirmWare;			//有新固件需要加载

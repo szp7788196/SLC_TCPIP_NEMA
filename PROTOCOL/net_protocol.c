@@ -99,10 +99,10 @@ u16 NetDataAnalysis(u8 *buf,u16 len,u8 *outbuf,u8 *hold_reg)
 		return ret;
 	}
 	
-	if(MyStrstr(buf,DeviceID,len,DEVICE_ID_LEN - 2) == 0xFFFF)
-	{
-		return ret;
-	}
+//	if(MyStrstr(buf,DeviceID,len,DEVICE_ID_LEN - 2) == 0xFFFF)
+//	{
+//		return ret;
+//	}
 	
 	if(MyStrstr(buf,DeviceUUID,len,UU_ID_LEN - 2) == 0xFFFF)
 	{
@@ -425,12 +425,12 @@ u16 SetRegularTimeGroups(u8 cmd_code,u8 *buf,u8 len,u8 *outbuf)
 						RegularTimeGroupAdd(TYPE_WEEKDAY,tmp_time);
 					break;
 					
-					case TYPE_WEEKEND:
-						RegularTimeGroupAdd(TYPE_WEEKEND,tmp_time);
+					case TYPE_HOLIDAY_START:
+						RegularTimeGroupAdd(TYPE_HOLIDAY_START,tmp_time);
 					break;
 					
-					case TYPE_HOLIDAY:
-						RegularTimeGroupAdd(TYPE_HOLIDAY,tmp_time);
+					case TYPE_HOLIDAY_END:
+						RegularTimeGroupAdd(TYPE_HOLIDAY_END,tmp_time);
 					break;
 					
 					default:
